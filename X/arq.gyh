@@ -8,8 +8,8 @@ LER parametro
 fatorial := parametro
 SE parametro == 0 ENTAO fatorial := 1
 ENQTO parametro > 1
-INICIO
-fatorial := fatorial * (parametro - 1)
-parametro := parametro - 1
-FINAL
+    INICIO
+        fatorial := fatorial * (parametro - 1) 
+        parametro := parametro - 1
+    FINAL
 IMPRIMIR fatorial
