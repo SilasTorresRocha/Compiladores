@@ -3,8 +3,7 @@
 import java.io.IOException;
 
 public class AP1 {
-    public static void main(String[] args) throws IOException {
-        //System.out.println(TipoToken.DelimAbre);     // plagio liberado kkkkk   
+    public static void main(String[] args) throws IOException { 
         AnalisadorLexo lex = new AnalisadorLexo("arq.gyh");
         Token t = lex.proxToken();
         while (t != null) {

@@ -1,0 +1,226 @@
+Implementar um Analisador Léxico para uma lingugem(teorica .gyh)
+
+Criterios:
+Organização do código (classes e métodos organizados de modo coerente)
+Implementação Correta do Analisador Léxico (linguagem Java)
+Entrada e Saída de informaçOes organizada
+O código fonte precisa estar comentado explicando a organização
+
+tabela para fazer tokens:
+tentei fazer usando formato latex para ficar mais organizado:
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Lexema} & \textbf{Padrão} & \textbf{Sigla} \\
+\hline
+DECLARAR, PROGRAMA, INTEGER, LER, REAL, IMPRIMIR, SE, SENAO, ENTAO, ENQTO, INICIO, FINAL & Palavras-chave & PC... (PCDec, PCProg, PCInt, PCReal, PCLer, PCImprimir, PCSe, PCEntao, PCSenao, PCEnqto, PCIni, PCFim) \\
+\hline
+*, /, +, - & Operadores Aritméticos & OpArit (OpAritMult, OpAritDiv, OpAritSoma, OpAritSub) \\
+\hline
+<, <=, >, >=, ==, != & Operadores Relacionais & OpRel (OpRelMenor, OpRelMenorIgual, OpRelMaior, OpRelMaiorIgual, OpRelIgual, OpRelDif) \\
+\hline
+E, OU & Operadores Booleanos & OpBoolE, OpBoolOu \\
+\hline
+[ ] & Delimitador & DelimAbre, DelimFecha \\
+\hline
+:= & Atribuição & Atrib \\
+\hline
+( , ) & Parêntesis & AbrePar, FechaPar \\
+\hline
+Sequências de letras ou números que começam com letra minúscula & Variável & Var \\
+\hline
+Sequências de dígitos (sem ponto) & Número Inteiro & NumInt \\
+\hline
+Sequências de dígitos (com ponto) & Número Real & NumReal \\
+\hline
+Sequências de caracteres envolta por aspas & Cadeia de caracteres & Cadeia \\
+\hline
+\end{tabular}
+\caption{Descrição da Linguagem GYH}
+\end{table}
+
+Vou forncer um exemplo (bem ruim que foi implentado, porem e muito ruim a qualidade dele.)
+
+AP1.java :"
+import java.io.IOException;
+
+public class AP1 {
+    public static void main(String[] args) throws IOException { 
+        AnalisadorLexo lex = new AnalisadorLexo("arq.gyh");
+        Token t = lex.proxToken();
+        while (t != null) {
+            System.out.println(t.toString());
+            t = lex.proxToken();
+        }
+    }
+}
+"
+AnalisadorLexo.java:"
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+public class AnalisadorLexo {
+    public LeitorArq ldat;
+
+    public AnalisadorLexo(String nomeArq) throws FileNotFoundException{
+        ldat=new LeitorArq(nomeArq);
+    }
+
+    public Token proxToken() throws IOException{
+        int caractereLido=-1;
+        while ((caractereLido=ldat.lerProxCacter())!=-1) {
+            char c = (char) caractereLido;
+            switch (c) {
+                case '[':
+                    return new Token("[",TipoToken.DelimAbre);
+                case ']':
+                    return new Token("]",TipoToken.DelimFecha);
+            }
+        }
+
+        return null;
+    }
+}
+"
+LeitorArq.java:"
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+
+public class LeitorArq {
+    public InputStream is;
+
+    public LeitorArq(String nomeArq) throws FileNotFoundException{
+        is= new FileInputStream(nomeArq);
+    }
+    public int lerProxCacter() throws IOException{
+        int caractere= -1;
+        caractere=is.read();
+        return caractere;
+    }
+}
+"
+TipoToken.java:"
+public enum TipoToken{
+    PCDec, PCProg, PCInt, PCReal, PCLer, PCImprimir, PCSe, PCEntao, PCSenao, PCEnqto, PCIni, PCFim,OpArit,
+    OpAritMult, OpAritDiv, OpAritSoma, OpAritSub,OpRelMenor, OpRelMenorIgual, OpRelMaior, OpRelMaiorIgual, OpRelIgual, OpRelDif,
+    OpBoolE, OpBoolOu,DelimAbre, DelimFecha,Atrib,AbrePar, FechaPar,Var,NumInt,NumReal,Cadeia, EoF,OpRel
+}"
+Token.java:"
+public class Token {
+    public String lexema;
+    public TipoToken padrao;
+    //mais inf
+
+    public Token(String lexema, TipoToken padrao){
+        this.lexema=lexema;
+        this.padrao=padrao;
+    }
+
+    @Override
+    public String toString(){
+        return"<"+padrao+","+lexema+">";
+    }
+}
+"
+arq.gyh:"
+[DECLARAR]
+parametro:INTEGER
+fatorial:INTEGER
+
+[PROGRAMA]
+# Calcula o fatorial de um número inteiro
+LER parametro
+fatorial := parametro
+SE parametro == 0 ENTAO fatorial := 1
+ENQTO parametro > 1
+INICIO
+fatorial := fatorial * (parametro - 1) 
+parametro := parametro - 1
+FINAL
+IMPRIMIR fatorial
+"
+
+Porem algumas coisa nesse codigo estao Implementar de forma muito ruim, como por exemplo a leitura de arquivo, salvo engano tem como o java ja ler os lexemas. sems ser essa coisa ruim que e ler caractere por caractere 
+Na geracao do tokens seria interante, alem de salvar as siglas e o lexema, usar uma tabela hash, e salvar a linha tambem para poder retornar a linha de onde estar o erro exemplo"Erro Léxico na linha 8: Desconhecido “Parametro”
+
+a Implementação do Automato (scanner) usando switch -case acho que nao e a melhor delas,  o que acha de usar JFlex? : algo tipo assim:"
+%%  
+%class Lexer  
+%unicode  
+%cup           // se for usar com JavaCUP  
+%line  
+%column  
+
+%%  
+
+// Espaços e comentários  
+<YYINITIAL> {  
+  [ \t\n\r]+              { /* ignora */ }  
+  "//".*                  { /* ignora comentário de linha */ }  
+  "/*"([^*]|\*+[^*/])*\*+"/" { /* ignora comentário de bloco */ }  
+}  
+
+// Palavras-chave  
+<YYINITIAL> {  
+  "DECLARAR"               { return sym(PCDec); }  
+  "PROGRAMA"               { return sym(PCProg); }  
+  "INTEGER"                { return sym(PCInt); }  
+  "REAL"                   { return sym(PCReal); }  
+  "LER"                    { return sym(PCLer); }  
+  "IMPRIMIR"               { return sym(PCImprimir); }  
+  "SE"                     { return sym(PCSe); }  
+  "ENTAO"                  { return sym(PCEntao); }  
+  "SENAO"                  { return sym(PCSenao); }  
+  "ENQTO"                  { return sym(PCEnqto); }  
+  "INICIO"                 { return sym(PCIni); }  
+  "FINAL"                  { return sym(PCFim); }  
+}  
+
+// Operadores  
+<YYINITIAL> {  
+  "\\*"                    { return sym(OpAritMult); }  
+  "/"                      { return sym(OpAritDiv); }  
+  "\\+"                    { return sym(OpAritSoma); }  
+  "-"                      { return sym(OpAritSub); }  
+  "<="                     { return sym(OpRelMenorIgual); }  
+  "<"                      { return sym(OpRelMenor); }  
+  ">="                     { return sym(OpRelMaiorIgual); }  
+  ">"                      { return sym(OpRelMaior); }  
+  "=="                     { return sym(OpRelIgual); }  
+  "!="                     { return sym(OpRelDif); }  
+  "E"                      { return sym(OpBoolE); }  
+  "OU"                     { return sym(OpBoolOu); }  
+  ":="                     { return sym(Atrib); }  
+  "\\["                    { return sym(DelimAbre); }  
+  "\\]"                    { return sym(DelimFecha); }  
+  "\\("                    { return sym(AbrePar); }  
+  "\\)"                    { return sym(FechaPar); }  
+}  
+
+// Identificador (variável)  
+<YYINITIAL> {  
+  [a-z][A-Za-z0-9]*        { return sym(Var, yytext()); }  
+}  
+
+// Número  
+<YYINITIAL> {  
+  [0-9]+"."[0-9]+          { return sym(NumReal, yytext()); }  
+  [0-9]+                   { return sym(NumInt, yytext()); }  
+}  
+
+// Cadeia de caracteres  
+<YYINITIAL> {  
+  "\""(\\.|[^"\\])*"\""    { return sym(Cadeia, yytext()); }  
+}  
+
+// Qualquer outro caractere ilegal  
+<YYINITIAL> {  
+  .                        { throw new LexicalError("Caractere inválido: " + yytext()); }  
+}  
+"
+
+que eu me lembro seria isso mas se tiver a melhor ainda mais
